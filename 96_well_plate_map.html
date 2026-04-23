@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>96-Well Plate — Sampling Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #fafaf7;
+    --line: #d4d0c8;
+    --line-strong: #1a1a1a;
+    --accent: #c74a3d;
+    --muted: #6b6b6b;
+    --well-empty: #ffffff;
+    --hover: rgba(199, 74, 61, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* ---------- HEADER ---------- */
+  .masthead {
+    border-bottom: 2px solid var(--line-strong);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .masthead h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .masthead h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .masthead .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* ---------- METADATA STRIP ---------- */
+  .meta-strip {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 2fr;
+    gap: 0;
+    border: 1px solid var(--line-strong);
+    margin-bottom: 28px;
+    background: #fff;
+  }
+
+  .meta-field {
+    padding: 10px 14px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-field:last-child { border-right: none; }
+
+  .meta-field label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+
+  .meta-field input {
+    border: none;
+    background: transparent;
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    padding: 0;
+    width: 100%;
+  }
+
+  .meta-field input::placeholder {
+    color: #b0b0b0;
+    font-style: italic;
+  }
+
+  /* ---------- LAYOUT ---------- */
+  .workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ---------- LEGEND ---------- */
+  .legend {
+    border: 1px solid var(--line-strong);
+    background: #fff;
+  }
+
+  .legend-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .legend-header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .legend-items {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border: 1.5px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .legend-item:hover { background: #f5f2ec; }
+
+  .legend-item.active {
+    border-color: var(--ink);
+    background: #f5f2ec;
+  }
+
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--ink);
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .swatch input[type="color"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    border: none;
+    padding: 0;
+  }
+
+  .legend-label {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    user-select: none;
+    caret-color: transparent;
+  }
+
+  .legend-label.editing {
+    background: #fffde7;
+    cursor: text;
+    user-select: auto;
+    caret-color: auto;
+  }
+
+  .legend-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 22px;
+    text-align: right;
+    padding-right: 2px;
+    user-select: none;
+  }
+
+  .legend-item.active .legend-count {
+    color: var(--ink);
+  }
+
+  .legend-item.eraser .swatch {
+    background: repeating-linear-gradient(45deg, #fff 0, #fff 3px, #ccc 3px, #ccc 6px);
+  }
+
+  .legend-footer {
+    padding: 8px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 6px;
+  }
+
+  .legend-footer button {
+    flex: 1;
+    padding: 6px 8px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.1s;
+  }
+
+  .legend-footer button:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* ---------- PLATE ---------- */
+  .plate-container {
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    padding: 20px;
+    position: relative;
+  }
+
+  .plate-label {
+    position: absolute;
+    top: 8px;
+    left: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+
+  .plate {
+    display: grid;
+    grid-template-columns: 28px repeat(12, 1fr);
+    grid-template-rows: 24px repeat(8, 1fr);
+    gap: 4px;
+    margin-top: 16px;
+  }
+
+  .corner {
+    background: transparent;
+  }
+
+  .col-label, .row-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.1s;
+  }
+
+  .col-label:hover, .row-label:hover {
+    color: var(--accent);
+  }
+
+  .well {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    background: var(--well-empty);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+
+  .well:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px var(--hover);
+    z-index: 2;
+  }
+
+  .well-tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    z-index: 10;
+  }
+
+  .well:hover .well-tooltip { opacity: 1; }
+
+  /* ---------- TOOLBAR ---------- */
+  .toolbar {
+    margin-top: 24px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+
+  .btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .btn.primary:hover {
+    background: #a73b30;
+    border-color: #a73b30;
+  }
+
+  .instructions {
+    margin-top: 20px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px dashed var(--line);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .instructions strong {
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  /* ---------- PRINT ---------- */
+  @media print {
+    @page {
+      size: letter landscape;
+      margin: 0.5in;
+    }
+
+    body { background: #fff; }
+
+    .page {
+      max-width: 100%;
+      padding: 0;
+    }
+
+    .toolbar, .instructions, .legend-footer, .plate-label { display: none !important; }
+
+    .workspace {
+      grid-template-columns: 220px 1fr;
+      gap: 20px;
+    }
+
+    .masthead h1 { font-size: 28px; }
+
+    .meta-field input {
+      font-size: 13px;
+    }
+
+    .legend-item { border-color: transparent !important; background: transparent !important; }
+
+    .well:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .well-tooltip { display: none; }
+
+    .legend-label {
+      background: transparent !important;
+    }
+
+    input {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .well, .swatch {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <h1>96-Well <em>Plate</em> Map</h1>
+    <div class="subtitle">
+      Interactive Sampling Guide<br>
+      <span id="well-counter">0 / 96 wells assigned</span>
+    </div>
+  </header>
+
+  <div class="meta-strip">
+    <div class="meta-field">
+      <label>Experiment / Assay</label>
+      <input type="text" id="meta-experiment" placeholder="e.g. qPCR — receptor binding screen">
+    </div>
+    <div class="meta-field">
+      <label>Plate ID</label>
+      <input type="text" id="meta-plate" placeholder="Plate 01">
+    </div>
+    <div class="meta-field">
+      <label>Date</label>
+      <input type="text" id="meta-date" placeholder="—">
+    </div>
+    <div class="meta-field">
+      <label>Operator / Notes</label>
+      <input type="text" id="meta-notes" placeholder="Initials + brief notes">
+    </div>
+  </div>
+
+  <div class="workspace">
+
+    <aside class="legend">
+      <div class="legend-header">
+        <span>Legend</span>
+        <span>Click to select</span>
+      </div>
+      <div class="legend-items" id="legend-items"></div>
+      <div class="legend-footer">
+        <button id="add-color">+ Add color</button>
+        <button id="remove-color">− Remove</button>
+      </div>
+    </aside>
+
+    <section class="plate-container">
+      <div class="plate-label">Thermo / Greiner — 96 × well format</div>
+      <div class="plate" id="plate"></div>
+    </section>
+
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" id="clear-all">Clear all wells</button>
+    <button class="btn" id="load-csv">Load CSV</button>
+    <button class="btn" id="export-csv">Export CSV</button>
+    <button class="btn primary" id="print">Print sampling guide</button>
+    <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display:none">
+  </div>
+
+  <div class="instructions">
+    <strong>How to use:</strong>
+    &nbsp; Click anywhere on a legend row to select that color, then click wells to paint them.
+    Clicking a well that already uses the active color will clear it.
+    <strong>Double-click</strong> a swatch to change its color, or <strong>double-click</strong> a label to rename it.
+    Click a <strong>row letter</strong> (A–H) or <strong>column number</strong> (1–12) to fill that entire row/column.
+  </div>
+
+</div>
+
+<script>
+  // ---------- STATE ----------
+  const ROWS = ['A','B','C','D','E','F','G','H'];
+  const COLS = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+  // wellState: { "A1": colorIndex, ... }  (colorIndex = -1 means empty)
+  const wellState = {};
+  ROWS.forEach(r => COLS.forEach(c => { wellState[r+c] = -1; }));
+
+  // Legend colors — index 0 is always the eraser
+  let colors = [
+    { hex: '#ffffff', label: 'Empty / Erase', isEraser: true },
+    { hex: '#e63946', label: 'Control' },
+    { hex: '#1d6fb8', label: 'Sample A' },
+    { hex: '#06a77d', label: 'Sample B' },
+    { hex: '#f4a418', label: 'Sample C' },
+    { hex: '#6f3ea6', label: 'Blank' },
+  ];
+
+  let activeColorIndex = 1; // start with first real color
+
+  // Set today's date by default
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('meta-date').value = `${today.getFullYear()}-${mm}-${dd}`;
+
+  // ---------- LEGEND ----------
+  const legendEl = document.getElementById('legend-items');
+
+  function renderLegend() {
+    legendEl.innerHTML = '';
+    const counts = getColorCounts();
+
+    colors.forEach((color, idx) => {
+      const item = document.createElement('div');
+      item.className = 'legend-item' + (idx === activeColorIndex ? ' active' : '') + (color.isEraser ? ' eraser' : '');
+      item.dataset.index = idx;
+      item.title = color.isEraser
+        ? 'Click to select eraser'
+        : 'Click to select • Double-click swatch to change color • Double-click label to rename';
+
+      const swatch = document.createElement('div');
+      swatch.className = 'swatch';
+      if (!color.isEraser) {
+        swatch.style.background = color.hex;
+        const picker = document.createElement('input');
+        picker.type = 'color';
+        picker.value = color.hex;
+        picker.addEventListener('input', (e) => {
+          colors[idx].hex = e.target.value;
+          swatch.style.background = e.target.value;
+          repaintWells();
+        });
+        swatch.appendChild(picker);
+        // Double-click the swatch to open the color picker
+        swatch.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          picker.click();
+        });
+      }
+
+      const label = document.createElement('input');
+      label.type = 'text';
+      label.className = 'legend-label';
+      label.value = color.label;
+      label.readOnly = true;
+      label.tabIndex = -1;
+
+      // Prevent single-click from focusing the input (which would steal focus
+      // from the parent's click-to-select). Programmatic focus() via dblclick
+      // still works because preventDefault only blocks the browser default.
+      label.addEventListener('mousedown', (e) => {
+        if (label.readOnly) e.preventDefault();
+      });
+
+      // Double-click the label to edit
+      label.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        label.readOnly = false;
+        label.classList.add('editing');
+        label.focus();
+        label.select();
+      });
+      label.addEventListener('blur', () => {
+        label.readOnly = true;
+        label.classList.remove('editing');
+      });
+      label.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') label.blur();
+      });
+      label.addEventListener('input', (e) => {
+        colors[idx].label = e.target.value;
+      });
+
+      const count = document.createElement('span');
+      count.className = 'legend-count';
+      count.textContent = color.isEraser ? '' : (counts[idx] || 0);
+
+      item.appendChild(swatch);
+      item.appendChild(label);
+      item.appendChild(count);
+
+      // Single click anywhere on the item selects this color.
+      // We update classes in-place rather than re-rendering so that a
+      // following dblclick on swatch/label still fires on the same element.
+      item.addEventListener('click', () => {
+        if (activeColorIndex === idx) return;
+        activeColorIndex = idx;
+        document.querySelectorAll('.legend-item').forEach(el => {
+          el.classList.toggle('active', parseInt(el.dataset.index) === idx);
+        });
+      });
+
+      legendEl.appendChild(item);
+    });
+  }
+
+  function getColorCounts() {
+    const counts = {};
+    Object.values(wellState).forEach(idx => {
+      if (idx >= 0) counts[idx] = (counts[idx] || 0) + 1;
+    });
+    return counts;
+  }
+
+  document.getElementById('add-color').addEventListener('click', () => {
+    const palette = ['#ff70a6','#2ec4b6','#ff9f1c','#8ac926','#845ec2','#ffc145','#00b4d8','#f72585'];
+    const hex = palette[(colors.length - 1) % palette.length];
+    colors.push({ hex, label: `Sample ${String.fromCharCode(64 + colors.length - 1)}` });
+    activeColorIndex = colors.length - 1;
+    renderLegend();
+  });
+
+  document.getElementById('remove-color').addEventListener('click', () => {
+    if (activeColorIndex <= 0) return; // can't remove eraser
+    if (colors.length <= 2) return; // keep at least one real color
+    // clear any wells using this color
+    Object.keys(wellState).forEach(k => {
+      if (wellState[k] === activeColorIndex) wellState[k] = -1;
+      else if (wellState[k] > activeColorIndex) wellState[k]--;
+    });
+    colors.splice(activeColorIndex, 1);
+    activeColorIndex = Math.min(activeColorIndex, colors.length - 1);
+    if (activeColorIndex === 0) activeColorIndex = 1;
+    renderLegend();
+    repaintWells();
+    updateCounter();
+  });
+
+  // ---------- PLATE ----------
+  const plateEl = document.getElementById('plate');
+
+  function buildPlate() {
+    plateEl.innerHTML = '';
+
+    // top-left corner
+    const corner = document.createElement('div');
+    corner.className = 'corner';
+    plateEl.appendChild(corner);
+
+    // column labels
+    COLS.forEach(c => {
+      const lbl = document.createElement('div');
+      lbl.className = 'col-label';
+      lbl.textContent = c;
+      lbl.title = `Click to fill column ${c}`;
+      lbl.addEventListener('click', () => fillColumn(c));
+      plateEl.appendChild(lbl);
+    });
+
+    // rows
+    ROWS.forEach(r => {
+      const rowLbl = document.createElement('div');
+      rowLbl.className = 'row-label';
+      rowLbl.textContent = r;
+      rowLbl.title = `Click to fill row ${r}`;
+      rowLbl.addEventListener('click', () => fillRow(r));
+      plateEl.appendChild(rowLbl);
+
+      COLS.forEach(c => {
+        const wellId = r + c;
+        const well = document.createElement('div');
+        well.className = 'well';
+        well.dataset.well = wellId;
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'well-tooltip';
+        tooltip.textContent = wellId;
+        well.appendChild(tooltip);
+
+        well.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          paintWell(wellId, false);
+          isDragging = true;
+        });
+        well.addEventListener('mouseenter', () => {
+          if (isDragging) paintWell(wellId, true);
+          tooltip.textContent = getWellDescription(wellId);
+        });
+
+        plateEl.appendChild(well);
+      });
+    });
+  }
+
+  let isDragging = false;
+  document.addEventListener('mouseup', () => { isDragging = false; });
+
+  function paintWell(wellId, isDragPaint) {
+    if (activeColorIndex === 0) {
+      // Eraser: always clear
+      wellState[wellId] = -1;
+    } else if (!isDragPaint && wellState[wellId] === activeColorIndex) {
+      // Single click on a well already using the active color → toggle off
+      wellState[wellId] = -1;
+    } else {
+      // Paint (or overwrite) with the active color
+      wellState[wellId] = activeColorIndex;
+    }
+    repaintWells();
+    updateCounter();
+    renderLegend();
+  }
+
+  function fillRow(r) {
+    COLS.forEach(c => {
+      wellState[r+c] = (activeColorIndex === 0) ? -1 : activeColorIndex;
+    });
+    repaintWells();
+    updateCounter();
+    renderLegend();
+  }
+
+  function fillColumn(c) {
+    ROWS.forEach(r => {
+      wellState[r+c] = (activeColorIndex === 0) ? -1 : activeColorIndex;
+    });
+    repaintWells();
+    updateCounter();
+    renderLegend();
+  }
+
+  function getWellDescription(wellId) {
+    const idx = wellState[wellId];
+    if (idx < 0) return wellId + ' — empty';
+    return wellId + ' — ' + (colors[idx]?.label || 'unlabeled');
+  }
+
+  function repaintWells() {
+    document.querySelectorAll('.well').forEach(w => {
+      const id = w.dataset.well;
+      const idx = wellState[id];
+      if (idx < 0 || !colors[idx]) {
+        w.style.background = 'var(--well-empty)';
+      } else {
+        w.style.background = colors[idx].hex;
+      }
+    });
+  }
+
+  function updateCounter() {
+    const assigned = Object.values(wellState).filter(v => v >= 0).length;
+    document.getElementById('well-counter').textContent = `${assigned} / 96 wells assigned`;
+  }
+
+  // ---------- TOOLBAR ACTIONS ----------
+  document.getElementById('clear-all').addEventListener('click', () => {
+    if (!confirm('Clear all wells? This cannot be undone.')) return;
+    Object.keys(wellState).forEach(k => wellState[k] = -1);
+    repaintWells();
+    updateCounter();
+    renderLegend();
+  });
+
+  document.getElementById('print').addEventListener('click', () => {
+    window.print();
+  });
+
+  document.getElementById('export-csv').addEventListener('click', () => {
+    let csv = 'Well,Color,Label\n';
+    ROWS.forEach(r => {
+      COLS.forEach(c => {
+        const id = r + c;
+        const idx = wellState[id];
+        if (idx >= 0 && colors[idx]) {
+          csv += `${id},${colors[idx].hex},"${colors[idx].label.replace(/"/g,'""')}"\n`;
+        } else {
+          csv += `${id},,\n`;
+        }
+      });
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const expName = document.getElementById('meta-experiment').value || 'plate';
+    a.href = url;
+    a.download = `${expName.replace(/[^a-z0-9]+/gi,'_')}_plate_map.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- CSV IMPORT ----------
+  document.getElementById('load-csv').addEventListener('click', () => {
+    document.getElementById('csv-file-input').click();
+  });
+
+  document.getElementById('csv-file-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadCSV(ev.target.result);
+    reader.onerror = () => alert('Could not read the file.');
+    reader.readAsText(file);
+    e.target.value = ''; // allow re-loading the same file
+  });
+
+  function parseCsvLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (c === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += c;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function loadCSV(text) {
+    // Strip BOM if present, split lines
+    const lines = text.replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+    if (lines.length === 0) {
+      alert('The CSV file is empty.');
+      return;
+    }
+
+    // Skip header row if it looks like one
+    const headerLower = lines[0].toLowerCase();
+    const dataLines = headerLower.includes('well') ? lines.slice(1) : lines;
+
+    // Build new state separately so we don't clobber existing state on error
+    const newWellState = {};
+    ROWS.forEach(r => COLS.forEach(c => { newWellState[r+c] = -1; }));
+
+    const uniqueColors = new Map(); // "hex|label" → new index
+    const newColors = [{ hex: '#ffffff', label: 'Empty / Erase', isEraser: true }];
+    let validRows = 0;
+
+    for (const line of dataLines) {
+      if (!line.trim()) continue;
+      const parts = parseCsvLine(line);
+      if (parts.length < 2) continue;
+
+      const wellId = (parts[0] || '').trim().toUpperCase();
+      const hex = (parts[1] || '').trim().toLowerCase();
+      const label = (parts[2] || '').trim();
+
+      if (!(wellId in newWellState)) continue;
+      if (!hex) continue; // empty well in CSV — leave unassigned
+      if (!/^#[0-9a-f]{6}$/.test(hex)) continue;
+
+      const key = hex + '|' + label;
+      if (!uniqueColors.has(key)) {
+        uniqueColors.set(key, newColors.length);
+        newColors.push({ hex, label: label || 'Unlabeled' });
+      }
+      newWellState[wellId] = uniqueColors.get(key);
+      validRows++;
+    }
+
+    if (validRows === 0) {
+      alert('No valid well assignments found. Expected CSV columns: Well, Color, Label (e.g. "A1,#e63946,Control").');
+      return;
+    }
+
+    // Commit new state
+    colors = newColors;
+    Object.keys(newWellState).forEach(k => { wellState[k] = newWellState[k]; });
+    activeColorIndex = colors.length > 1 ? 1 : 0;
+
+    renderLegend();
+    repaintWells();
+    updateCounter();
+  }
+
+  // ---------- INIT ----------
+  renderLegend();
+  buildPlate();
+  repaintWells();
+  updateCounter();
+</script>
+
+</body>
+</html>
