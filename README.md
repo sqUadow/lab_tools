@@ -31,12 +31,15 @@ lab_tools/
 
 #### How to use
 
-1. Open Fiji/ImageJ.
-2. Open your gel image.
-3. Load and run the macro from `tools/fiji/gel_label.ijm`.
-4. Click in the title area to set a title.
-5. Click the first lane and last lane.
-6. Adjust lane count in the preview dialog until ticks match, then accept.
+1. Acquire the gel image with lanes as straight/vertical as possible.
+2. Open Fiji/ImageJ.
+3. Open your gel image.
+4. Use the Rectangle selection tool to select the region containing the lanes you want to label.
+5. Load and run the macro from `tools/fiji/gel_label.ijm`.
+6. When prompted by the running macro, click the center of a band in the first lane and then the center of a band in the last lane.
+7. Adjust the total lane count in the preview dialog until the lane guides/ticks match, then accept.
+8. Optionally choose a ladder when prompted.
+9. Use ROI Manager to finalize/edit lane labels and title text as needed.
 
 #### Notes
 
