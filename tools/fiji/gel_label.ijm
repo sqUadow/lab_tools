@@ -1,4 +1,4 @@
-macro "manual_gel_label_span_first_last [1]"{
+macro "manual_gel_label_span_first_last [2]"{
     // --- SETUP ---
     if (isOpen("Log")) { selectWindow("Log"); run("Close"); }
     run("Console");
@@ -257,6 +257,32 @@ macro "manual_gel_label_span_first_last [1]"{
     rename_text_rois_in_manager();
     roiManager("Show All without labels");
     selectWindow("ROI Manager");
+    print("You can now edit labels/ROIs in ROI Manager.");
+    waitForUser("Edit labels first", "Edit labels/ROIs now, then click OK to continue.");
+
+    do_save = getBoolean("Save annotated image + ROI set now?");
+    if (do_save) {
+        save_dir = getDirectory("Choose folder to save annotated gel");
+        if (lengthOf(save_dir) > 0) {
+            selectImage(workingImageID);
+            base_name = getTitle();
+            base_name = replace(base_name, ".tif", "");
+            base_name = replace(base_name, ".tiff", "");
+            base_name = replace(base_name, ".png", "");
+            base_name = replace(base_name, ".jpg", "");
+            base_name = replace(base_name, ".jpeg", "");
+
+            saveAs("Tiff", save_dir + base_name + "_annotated.tif");
+            roiManager("Save", save_dir + base_name + "_annotations.zip");
+            print("Saved: " + save_dir + base_name + "_annotated.tif");
+            print("Saved: " + save_dir + base_name + "_annotations.zip");
+        } else {
+            print("Save canceled. No files were written.");
+        }
+    } else {
+        print("Save skipped.");
+    }
+
     print("Done.");
 
 
@@ -431,6 +457,7 @@ macro "manual_gel_label_span_first_last [1]"{
 
         print("--- Analyzing Ladder Standard ---");
 
+        // Dialog first so Skip avoids any processing
         Dialog.create("Choose Ladder");
         Dialog.addMessage("Select the specific ladder used for this gel:");
         Dialog.addChoice("Type:", newArray("Skip Ladder", "GeneRuler 1kb", "1kb Plus", "Express", "Ultra Low"), "Skip Ladder");
@@ -443,6 +470,48 @@ macro "manual_gel_label_span_first_last [1]"{
             return "";
         }
 
+        // --- LADDER CONFIGURATION ---
+        // bright_sizes: the reliably bright/distinct bands used as calibration anchors (large→small)
+        // first_label_size: the largest expected band; if a peak is found above all bright anchors,
+        //   it is used as an additional top calibration point
+        labels = newArray(0);
+        bright_sizes = newArray(0);
+        first_label_size = 0;
+
+        if (user_choice == "GeneRuler 1kb") {
+            LADDER_TYPE = "GeneRuler 1kb";
+            labels = newArray("10k", "8k", "6k", "5k", "4k", "3500", "3k", "2500", "2000", "1500", "1000", "750", "500", "250");
+            bright_sizes = newArray(6000, 3000, 1000);
+            first_label_size = 10000;
+        }
+        else if (user_choice == "1kb Plus") {
+            LADDER_TYPE = "1kb+";
+            labels = newArray("20k", "10k", "7k", "5k", "4k", "3k", "2k", "1.5k", "1k", "850", "650", "500", "400", "300", "200", "100");
+            bright_sizes = newArray(5000, 1500, 500);
+            first_label_size = 20000;
+        }
+        else if (user_choice == "Express") {
+            LADDER_TYPE = "Express";
+            labels = newArray("5000", "3000", "2000", "1500", "1000", "750", "500", "300", "100");
+            bright_sizes = newArray(1500, 500);
+            first_label_size = 5000;
+        }
+        else if (user_choice == "Ultra Low") {
+            LADDER_TYPE = "Ultra Low";
+            labels = newArray("700", "650", "400", "300", "200", "150", "100", "75", "50", "35", "25", "15", "10");
+            bright_sizes = newArray(300, 50);
+            first_label_size = 700;
+        }
+
+        print("Selected: " + LADDER_TYPE);
+
+        // Numeric sizes for all labels (for interpolation)
+        label_sizes = newArray(labels.length);
+        for (i = 0; i < labels.length; i++) {
+            label_sizes[i] = parse_size(labels[i]);
+        }
+
+        // --- ENHANCED IMAGE PROCESSING ---
         line_start_y = top_margin + 50;
         line_end_y = im_height - 10;
 
@@ -452,7 +521,8 @@ macro "manual_gel_label_span_first_last [1]"{
         tempID = getImageID();
 
         run("Subtract Background...", "rolling=50");
-        run("Gaussian Blur...", "sigma=2");
+        run("Enhance Contrast...", "saturated=0.35 normalize");
+        run("Gaussian Blur...", "sigma=1.5");
 
         run("Select None");
         run("Line Width...", "line=" + scan_width);
@@ -462,84 +532,114 @@ macro "manual_gel_label_span_first_last [1]"{
 
         if (profile.length == 0) return "";
 
-        Array.getStatistics(profile, min, max, mean, stdDev);
+        Array.getStatistics(profile, prof_min, prof_max, prof_mean, prof_std);
 
-        tol_high = (max - min) * 0.10;
-        if (tol_high < 10) tol_high = 10;
-        peaks_high = Array.findMaxima(profile, tol_high);
+        // --- ANCHOR PEAK DETECTION ---
+        // Find all peaks; Array.findMaxima returns indices sorted by peak height (descending)
+        n_bright = bright_sizes.length;
+        tol_anchors = (prof_max - prof_min) * 0.12;
+        if (tol_anchors < 8) tol_anchors = 8;
+        all_peaks = Array.findMaxima(profile, tol_anchors);
 
-        final_peaks = Array.copy(peaks_high);
-        Array.sort(final_peaks);
-        final_num = final_peaks.length;
+        if (all_peaks.length == 0) return "";
 
-        labels = newArray(0);
-        ref_idx = 0;
+        // Take the top n_bright brightest as the bright anchor peaks, then sort by position
+        n_use = minOf(n_bright, all_peaks.length);
+        bright_y = newArray(n_use);
+        for (i = 0; i < n_use; i++) {
+            bright_y[i] = all_peaks[i];
+        }
+        Array.sort(bright_y);  // ascending y = top-to-bottom = large-to-small size
 
-        max_p_val = -1;
-        brightest_p_idx = -1;
-        for (i=0; i<final_num; i++) {
-             val = profile[final_peaks[i]];
-             if (val > max_p_val) {
-                 max_p_val = val;
-                 brightest_p_idx = i;
-             }
+        // Build initial calibration: bright_y[i] → bright_sizes[i]
+        // Allocate max possible size (n_bright + 1 for optional first band)
+        calib_y = newArray(n_use + 1);
+        calib_log_s = newArray(n_use + 1);
+        n_calib = n_use;
+        for (i = 0; i < n_use; i++) {
+            calib_y[i] = bright_y[i];
+            calib_log_s[i] = log(bright_sizes[i]) / log(10);
         }
 
-        if (user_choice == "GeneRuler 1kb") {
-            LADDER_TYPE = "GeneRuler 1kb";
-            labels = newArray("10k", "8k", "6k", "5k", "4k", "3500", "3k", "2500", "2000", "1500", "1000", "750", "500", "250");
-            ref_idx = 2;
-        }
-        else if (user_choice == "1kb Plus") {
-            LADDER_TYPE = "1kb+";
-            labels = newArray("20k", "10k", "7k", "5k", "4k", "3k", "2k", "1.5k", "1k", "850", "650", "500", "400", "300", "200", "100");
-            ref_idx = 3;
-        }
-        else if (user_choice == "Express") {
-            LADDER_TYPE = "Express";
-            labels = newArray("5000", "3000", "2000", "1500", "1000", "750", "500", "300", "100");
-            ref_idx = 6;
-        }
-        else if (user_choice == "Ultra Low") {
-            LADDER_TYPE = "Ultra Low";
-            labels = newArray("700", "650", "400", "300", "200", "150", "100", "75", "50", "35", "25", "15", "10");
-            ref_idx = 3;
+        // Look for peaks above the topmost bright anchor to anchor the top of the gel
+        // (useful for bands above the bright-anchor range that are occasionally visible)
+        if (n_use > 0 && first_label_size > bright_sizes[0]) {
+            topmost_bright = bright_y[0];
+            first_peak_y = -1;
+            for (p = 0; p < all_peaks.length; p++) {
+                if (all_peaks[p] < topmost_bright) {
+                    if (first_peak_y < 0 || all_peaks[p] < first_peak_y)
+                        first_peak_y = all_peaks[p];
+                }
+            }
+            if (first_peak_y >= 0) {
+                // Prepend the first-band calibration point
+                for (i = n_calib; i > 0; i--) {
+                    calib_y[i] = calib_y[i-1];
+                    calib_log_s[i] = calib_log_s[i-1];
+                }
+                calib_y[0] = first_peak_y;
+                calib_log_s[0] = log(first_label_size) / log(10);
+                n_calib = n_calib + 1;
+                print("Top band detected at y=" + first_peak_y + ", used as " + first_label_size + " bp anchor.");
+            }
         }
 
-        print("Selected: " + LADDER_TYPE);
+        print("Using " + n_calib + " calibration anchor(s).");
+        if (n_calib < 2) {
+            print("Warning: fewer than 2 anchors detected. Label positions may be inaccurate.");
+        }
 
-        new_upper_idx = brightest_p_idx;
-
+        // --- DRAW ALL EXPECTED BANDS AT INTERPOLATED POSITIONS ---
         selectImage(imgID);
-        setFont("SansSerif", 16, "antialiased");
-        setJustification("right");
+        setFont("SansSerif", 11, "antialiased");
+        setJustification("Right");
         setColor("white");
 
         str_y = "";
         str_s = "";
 
-        for (i=0; i<final_num; i++) {
-            offset = i - new_upper_idx;
-            label_idx = ref_idx + offset;
+        for (i = 0; i < labels.length; i++) {
+            target_log = log(label_sizes[i]) / log(10);
+            pred_y = interp_y(target_log, calib_y, calib_log_s, n_calib);
+            if (pred_y < 0 || pred_y >= profile.length) continue;
 
-            if (label_idx >= 0 && label_idx < labels.length) {
-                txt = labels[label_idx];
-                y_loc = final_peaks[i] + line_start_y;
+            y_loc = pred_y + line_start_y;
+            draw_named_text(labels[i], labels[i], x_pos - 20, y_loc + 6);
 
-                label_draw_x = x_pos - 20;
-                draw_named_text(txt, txt, label_draw_x, y_loc + 6);
-
-                if (lengthOf(str_y) > 0) {
-                    str_y = str_y + ",";
-                    str_s = str_s + ",";
-                }
-                str_y = str_y + final_peaks[i];
-                str_s = str_s + txt;
-            }
+            if (lengthOf(str_y) > 0) { str_y = str_y + ","; str_s = str_s + ","; }
+            str_y = str_y + pred_y;
+            str_s = str_s + labels[i];
         }
         Overlay.show;
 
         return str_y + "|" + str_s;
+    }
+
+    // Log-linear interpolation (or extrapolation) of y-pixel position from calibration points.
+    // calib_log_s must be descending (large size → small y at top of gel).
+    // calib_y must be ascending (matching small y → top).
+    function interp_y(target_log, calib_y, calib_log_s, n) {
+        if (n < 1) return -1;
+        if (n == 1) return calib_y[0];
+
+        // Find the bracketing pair (or extrapolate from the nearest edge pair)
+        ui = 0; li = 1;  // default: extrapolate above top anchor using first pair
+        if (target_log <= calib_log_s[n-1]) {
+            ui = n-2; li = n-1;  // extrapolate below bottom anchor using last pair
+        } else {
+            for (k = 0; k < n-1; k++) {
+                if (calib_log_s[k] >= target_log && target_log >= calib_log_s[k+1]) {
+                    ui = k; li = k+1; break;
+                }
+            }
+        }
+
+        dlog = calib_log_s[li] - calib_log_s[ui];
+        if (dlog == 0) return round((calib_y[ui] + calib_y[li]) / 2);
+
+        frac = (target_log - calib_log_s[ui]) / dlog;
+        return round(calib_y[ui] + frac * (calib_y[li] - calib_y[ui]));
     }
 
     function draw_named_text(txt, roi_name, x_pos, y_pos) {
