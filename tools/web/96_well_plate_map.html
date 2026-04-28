@@ -114,8 +114,8 @@
   /* ---------- LAYOUT ---------- */
   .workspace {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 32px;
+    grid-template-columns: 220px minmax(0, 1fr) 240px;
+    gap: 24px;
     align-items: start;
   }
 
@@ -279,7 +279,8 @@
     display: grid;
     grid-template-columns: 28px repeat(12, 1fr);
     grid-template-rows: 24px repeat(8, 1fr);
-    gap: 4px;
+    column-gap: 4px;
+    row-gap: 18px;
     margin-top: 16px;
   }
 
@@ -318,6 +319,126 @@
     transform: scale(1.08);
     box-shadow: 0 0 0 2px var(--hover);
     z-index: 2;
+  }
+
+  .well-text {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180%;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ---------- LABELS PANEL (right side) ---------- */
+  .labels-panel {
+    border: 1px solid var(--line-strong);
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .labels-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .labels-header span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .labels-items {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+
+  .labels-empty {
+    padding: 24px 16px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    border-radius: 2px;
+  }
+
+  .label-row:hover {
+    background: #f5f2ec;
+  }
+
+  .label-well-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    width: 28px;
+    flex-shrink: 0;
+    color: var(--ink);
+  }
+
+  .label-swatch {
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--ink);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .label-text {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+    padding: 3px 5px;
+    outline: none;
+    border-radius: 2px;
+  }
+
+  .label-text:hover {
+    border-color: var(--line);
+  }
+
+  .label-text:focus {
+    border-color: var(--ink);
+    background: #fffde7;
+  }
+
+  .label-text::placeholder {
+    color: #c0c0c0;
+    font-style: italic;
   }
 
   .well-tooltip {
@@ -401,7 +522,7 @@
   @media print {
     @page {
       size: letter landscape;
-      margin: 0.5in;
+      margin: 0.4in;
     }
 
     body { background: #fff; }
@@ -411,20 +532,68 @@
       padding: 0;
     }
 
-    .toolbar, .instructions, .legend-footer, .plate-label { display: none !important; }
+    .toolbar, .instructions, .legend-footer, .plate-label, .labels-panel { display: none !important; }
 
-    .workspace {
-      grid-template-columns: 220px 1fr;
-      gap: 20px;
+    /* Compact masthead */
+    .masthead {
+      padding-bottom: 6px;
+      margin-bottom: 10px;
     }
+    .masthead h1 { font-size: 22px; }
+    .masthead .subtitle { font-size: 9px; }
 
-    .masthead h1 { font-size: 28px; }
-
+    /* Compact meta-strip */
+    .meta-strip {
+      margin-bottom: 12px;
+    }
+    .meta-field {
+      padding: 5px 10px;
+    }
+    .meta-field label {
+      font-size: 8px;
+    }
     .meta-field input {
-      font-size: 13px;
+      font-size: 12px;
     }
 
-    .legend-item { border-color: transparent !important; background: transparent !important; }
+    /* Tighter workspace */
+    .workspace {
+      grid-template-columns: 190px 1fr;
+      gap: 14px;
+    }
+
+    /* Compact plate — cap width so wells don't grow too large,
+       and reduce row-gap since labels render at smaller font size */
+    .plate-container {
+      padding: 12px 14px;
+    }
+    .plate {
+      column-gap: 3px;
+      row-gap: 12px;
+      margin-top: 6px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .plate .col-label, .plate .row-label {
+      font-size: 10px;
+    }
+    .well-text {
+      font-size: 7.5px;
+    }
+
+    /* Tighter legend */
+    .legend-header { padding: 6px 10px; }
+    .legend-header span { font-size: 9px; }
+    .legend-items { padding: 5px; gap: 2px; }
+    .legend-item {
+      border-color: transparent !important;
+      background: transparent !important;
+      padding: 3px 6px;
+      gap: 8px;
+    }
+    .swatch { width: 16px; height: 16px; }
+    .legend-label, .legend-count { font-size: 11px; }
 
     .well:hover {
       transform: none;
@@ -445,6 +614,12 @@
     .well, .swatch {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+    }
+
+    /* Force everything to fit on one page */
+    .page, .workspace, .plate-container, .plate {
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
   }
 </style>
@@ -499,6 +674,17 @@
       <div class="plate" id="plate"></div>
     </section>
 
+    <aside class="labels-panel">
+      <div class="labels-header">
+        <span>Well Labels</span>
+        <span id="labels-count">0 wells</span>
+      </div>
+      <div class="labels-items" id="labels-items"></div>
+      <div class="labels-empty" id="labels-empty">
+        No colored wells yet.<br>Paint a well to add a label.
+      </div>
+    </aside>
+
   </div>
 
   <div class="toolbar">
@@ -515,6 +701,8 @@
     Clicking a well that already uses the active color will clear it.
     <strong>Double-click</strong> a swatch to change its color, or <strong>double-click</strong> a label to rename it.
     Click a <strong>row letter</strong> (A–H) or <strong>column number</strong> (1–12) to fill that entire row/column.
+    Use the <strong>Well Labels</strong> panel on the right to add per-well text annotations — Tab or Enter
+    moves between fields. Labels appear below each well on the printed sheet.
   </div>
 
 </div>
@@ -527,6 +715,10 @@
   // wellState: { "A1": colorIndex, ... }  (colorIndex = -1 means empty)
   const wellState = {};
   ROWS.forEach(r => COLS.forEach(c => { wellState[r+c] = -1; }));
+
+  // wellLabels: per-well text annotations { "A1": "Patient 04", ... }
+  const wellLabels = {};
+  ROWS.forEach(r => COLS.forEach(c => { wellLabels[r+c] = ''; }));
 
   // Legend colors — index 0 is always the eraser
   let colors = [
@@ -711,6 +903,10 @@
         tooltip.textContent = wellId;
         well.appendChild(tooltip);
 
+        const wellText = document.createElement('div');
+        wellText.className = 'well-text';
+        well.appendChild(wellText);
+
         well.addEventListener('mousedown', (e) => {
           e.preventDefault();
           paintWell(wellId, false);
@@ -731,42 +927,61 @@
 
   function paintWell(wellId, isDragPaint) {
     if (activeColorIndex === 0) {
-      // Eraser: always clear
+      // Eraser: always clear (also clears any label)
       wellState[wellId] = -1;
+      wellLabels[wellId] = '';
     } else if (!isDragPaint && wellState[wellId] === activeColorIndex) {
       // Single click on a well already using the active color → toggle off
       wellState[wellId] = -1;
+      wellLabels[wellId] = '';
     } else {
-      // Paint (or overwrite) with the active color
+      // Paint (or overwrite) with the active color (label preserved across recoloring)
       wellState[wellId] = activeColorIndex;
     }
     repaintWells();
     updateCounter();
     renderLegend();
+    renderLabels();
   }
 
   function fillRow(r) {
     COLS.forEach(c => {
-      wellState[r+c] = (activeColorIndex === 0) ? -1 : activeColorIndex;
+      const id = r+c;
+      if (activeColorIndex === 0) {
+        wellState[id] = -1;
+        wellLabels[id] = '';
+      } else {
+        wellState[id] = activeColorIndex;
+      }
     });
     repaintWells();
     updateCounter();
     renderLegend();
+    renderLabels();
   }
 
   function fillColumn(c) {
     ROWS.forEach(r => {
-      wellState[r+c] = (activeColorIndex === 0) ? -1 : activeColorIndex;
+      const id = r+c;
+      if (activeColorIndex === 0) {
+        wellState[id] = -1;
+        wellLabels[id] = '';
+      } else {
+        wellState[id] = activeColorIndex;
+      }
     });
     repaintWells();
     updateCounter();
     renderLegend();
+    renderLabels();
   }
 
   function getWellDescription(wellId) {
     const idx = wellState[wellId];
     if (idx < 0) return wellId + ' — empty';
-    return wellId + ' — ' + (colors[idx]?.label || 'unlabeled');
+    const cat = colors[idx]?.label || 'unlabeled';
+    const note = wellLabels[wellId];
+    return note ? `${wellId} — ${cat} • ${note}` : `${wellId} — ${cat}`;
   }
 
   function repaintWells() {
@@ -778,7 +993,99 @@
       } else {
         w.style.background = colors[idx].hex;
       }
+      const textEl = w.querySelector('.well-text');
+      if (textEl) {
+        textEl.textContent = (idx >= 0) ? (wellLabels[id] || '') : '';
+      }
     });
+  }
+
+  function updateWellTextDisplay(id) {
+    const wellEl = document.querySelector(`.well[data-well="${id}"]`);
+    if (!wellEl) return;
+    const textEl = wellEl.querySelector('.well-text');
+    if (textEl) textEl.textContent = wellLabels[id] || '';
+  }
+
+  function renderLabels() {
+    const items = document.getElementById('labels-items');
+    const empty = document.getElementById('labels-empty');
+    const countEl = document.getElementById('labels-count');
+
+    // Collect colored wells in plate order
+    const colored = [];
+    ROWS.forEach(r => COLS.forEach(c => {
+      const id = r + c;
+      if (wellState[id] >= 0) colored.push(id);
+    }));
+
+    countEl.textContent = `${colored.length} ${colored.length === 1 ? 'well' : 'wells'}`;
+
+    if (colored.length === 0) {
+      items.style.display = 'none';
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+    items.style.display = 'flex';
+
+    // Preserve focus across re-renders so typing isn't interrupted
+    const activeEl = document.activeElement;
+    const focusedWell = activeEl?.classList.contains('label-text') ? activeEl.dataset.well : null;
+    const focusedSelStart = focusedWell ? activeEl.selectionStart : null;
+    const focusedSelEnd = focusedWell ? activeEl.selectionEnd : null;
+
+    items.innerHTML = '';
+
+    colored.forEach(id => {
+      const row = document.createElement('div');
+      row.className = 'label-row';
+
+      const wellId = document.createElement('span');
+      wellId.className = 'label-well-id';
+      wellId.textContent = id;
+
+      const swatch = document.createElement('span');
+      swatch.className = 'label-swatch';
+      const cIdx = wellState[id];
+      if (colors[cIdx]) swatch.style.background = colors[cIdx].hex;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'label-text';
+      input.dataset.well = id;
+      input.value = wellLabels[id] || '';
+      input.placeholder = 'Add label…';
+      input.addEventListener('input', (e) => {
+        wellLabels[id] = e.target.value;
+        updateWellTextDisplay(id);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          // Move focus to the next input
+          e.preventDefault();
+          const inputs = Array.from(items.querySelectorAll('.label-text'));
+          const idx = inputs.indexOf(e.target);
+          if (idx >= 0 && idx < inputs.length - 1) inputs[idx + 1].focus();
+          else e.target.blur();
+        }
+      });
+
+      row.appendChild(wellId);
+      row.appendChild(swatch);
+      row.appendChild(input);
+      items.appendChild(row);
+    });
+
+    // Restore focus
+    if (focusedWell) {
+      const restored = items.querySelector(`.label-text[data-well="${focusedWell}"]`);
+      if (restored) {
+        restored.focus();
+        try { restored.setSelectionRange(focusedSelStart, focusedSelEnd); } catch(e) {}
+      }
+    }
   }
 
   function updateCounter() {
@@ -788,11 +1095,15 @@
 
   // ---------- TOOLBAR ACTIONS ----------
   document.getElementById('clear-all').addEventListener('click', () => {
-    if (!confirm('Clear all wells? This cannot be undone.')) return;
-    Object.keys(wellState).forEach(k => wellState[k] = -1);
+    if (!confirm('Clear all wells and labels? This cannot be undone.')) return;
+    Object.keys(wellState).forEach(k => {
+      wellState[k] = -1;
+      wellLabels[k] = '';
+    });
     repaintWells();
     updateCounter();
     renderLegend();
+    renderLabels();
   });
 
   document.getElementById('print').addEventListener('click', () => {
@@ -800,18 +1111,34 @@
   });
 
   document.getElementById('export-csv').addEventListener('click', () => {
-    let csv = 'Well,Color,Label\n';
+    const csvEsc = (s) => {
+      if (s == null || s === '') return '';
+      const str = String(s);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
+    };
+
+    let csv = '';
+    // Metadata block (Field,Value rows) — kept at the top so it's visible
+    // when the CSV is opened in Excel or any text editor.
+    csv += `Experiment,${csvEsc(document.getElementById('meta-experiment').value)}\n`;
+    csv += `Plate ID,${csvEsc(document.getElementById('meta-plate').value)}\n`;
+    csv += `Date,${csvEsc(document.getElementById('meta-date').value)}\n`;
+    csv += `Notes,${csvEsc(document.getElementById('meta-notes').value)}\n`;
+    csv += '\n';
+
+    // Well data block
+    csv += 'Well,Color,Label,Note\n';
     ROWS.forEach(r => {
       COLS.forEach(c => {
         const id = r + c;
         const idx = wellState[id];
-        if (idx >= 0 && colors[idx]) {
-          csv += `${id},${colors[idx].hex},"${colors[idx].label.replace(/"/g,'""')}"\n`;
-        } else {
-          csv += `${id},,\n`;
-        }
+        const note = wellLabels[id] || '';
+        const labelCell = (idx >= 0 && colors[idx]) ? csvEsc(colors[idx].label) : '';
+        const hex = (idx >= 0 && colors[idx]) ? colors[idx].hex : '';
+        csv += `${id},${hex},${labelCell},${csvEsc(note)}\n`;
       });
     });
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -865,13 +1192,57 @@
       return;
     }
 
-    // Skip header row if it looks like one
-    const headerLower = lines[0].toLowerCase();
-    const dataLines = headerLower.includes('well') ? lines.slice(1) : lines;
+    // Find the Well-data header line. Anything before it (skipping blanks)
+    // is treated as Field,Value metadata. If no header is found, the entire
+    // file is treated as well data (backward-compatible with older CSVs
+    // that had no header at all).
+    let headerIdx = -1;
+    for (let i = 0; i < lines.length; i++) {
+      const lower = lines[i].toLowerCase().trim();
+      if (lower === 'well' || lower.startsWith('well,')) {
+        headerIdx = i;
+        break;
+      }
+    }
+
+    // Parse metadata from lines before the Well header
+    const metadata = {};
+    const metaEndIdx = headerIdx >= 0 ? headerIdx : 0;
+    for (let j = 0; j < metaEndIdx; j++) {
+      if (!lines[j].trim()) continue;
+      const parts = parseCsvLine(lines[j]);
+      if (parts.length < 2) continue;
+      const key = parts[0].trim().toLowerCase();
+      const value = parts.slice(1).join(',').trim();
+      // Strip wrapping quotes if the value came in quoted
+      metadata[key] = value;
+    }
+
+    // Apply metadata to fields. Each setter accepts multiple alias keys
+    // so old/alternate header names (e.g. "Operator / Notes") still work.
+    const setMetaField = (id, ...keys) => {
+      for (const k of keys) {
+        if (k in metadata) {
+          document.getElementById(id).value = metadata[k];
+          return;
+        }
+      }
+    };
+    setMetaField('meta-experiment', 'experiment', 'experiment / assay', 'assay');
+    setMetaField('meta-plate', 'plate id', 'plate', 'plate-id');
+    setMetaField('meta-date', 'date');
+    setMetaField('meta-notes', 'notes', 'operator / notes', 'operator', 'operator/notes');
+
+    // Determine which lines hold well data
+    const dataLines = headerIdx >= 0 ? lines.slice(headerIdx + 1) : lines;
 
     // Build new state separately so we don't clobber existing state on error
     const newWellState = {};
-    ROWS.forEach(r => COLS.forEach(c => { newWellState[r+c] = -1; }));
+    const newWellLabels = {};
+    ROWS.forEach(r => COLS.forEach(c => {
+      newWellState[r+c] = -1;
+      newWellLabels[r+c] = '';
+    }));
 
     const uniqueColors = new Map(); // "hex|label" → new index
     const newColors = [{ hex: '#ffffff', label: 'Empty / Erase', isEraser: true }];
@@ -885,33 +1256,39 @@
       const wellId = (parts[0] || '').trim().toUpperCase();
       const hex = (parts[1] || '').trim().toLowerCase();
       const label = (parts[2] || '').trim();
+      const note = (parts[3] || '').trim();
 
       if (!(wellId in newWellState)) continue;
-      if (!hex) continue; // empty well in CSV — leave unassigned
-      if (!/^#[0-9a-f]{6}$/.test(hex)) continue;
 
-      const key = hex + '|' + label;
-      if (!uniqueColors.has(key)) {
-        uniqueColors.set(key, newColors.length);
-        newColors.push({ hex, label: label || 'Unlabeled' });
+      if (hex && /^#[0-9a-f]{6}$/.test(hex)) {
+        const key = hex + '|' + label;
+        if (!uniqueColors.has(key)) {
+          uniqueColors.set(key, newColors.length);
+          newColors.push({ hex, label: label || 'Unlabeled' });
+        }
+        newWellState[wellId] = uniqueColors.get(key);
+        if (note) newWellLabels[wellId] = note;
+        validRows++;
       }
-      newWellState[wellId] = uniqueColors.get(key);
-      validRows++;
     }
 
     if (validRows === 0) {
-      alert('No valid well assignments found. Expected CSV columns: Well, Color, Label (e.g. "A1,#e63946,Control").');
+      alert('No valid well assignments found. Expected CSV columns: Well, Color, Label, Note (e.g. "A1,#e63946,Control,Patient 04").');
       return;
     }
 
     // Commit new state
     colors = newColors;
-    Object.keys(newWellState).forEach(k => { wellState[k] = newWellState[k]; });
+    Object.keys(newWellState).forEach(k => {
+      wellState[k] = newWellState[k];
+      wellLabels[k] = newWellLabels[k];
+    });
     activeColorIndex = colors.length > 1 ? 1 : 0;
 
     renderLegend();
     repaintWells();
     updateCounter();
+    renderLabels();
   }
 
   // ---------- INIT ----------
@@ -919,6 +1296,7 @@
   buildPlate();
   repaintWells();
   updateCounter();
+  renderLabels();
 </script>
 
 </body>
