@@ -1211,10 +1211,16 @@
     for (let j = 0; j < metaEndIdx; j++) {
       if (!lines[j].trim()) continue;
       const parts = parseCsvLine(lines[j]);
+      // Strip cells beyond the expected 2 columns (Field,Value) when those
+      // cells are empty — these appear when the CSV has been padded to a
+      // uniform column count (e.g. by Excel) after export, and would
+      // otherwise get folded into the value as trailing commas.
+      while (parts.length > 2 && parts[parts.length - 1] === '') {
+        parts.pop();
+      }
       if (parts.length < 2) continue;
       const key = parts[0].trim().toLowerCase();
       const value = parts.slice(1).join(',').trim();
-      // Strip wrapping quotes if the value came in quoted
       metadata[key] = value;
     }
 
