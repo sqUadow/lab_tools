@@ -1114,13 +1114,13 @@
     window.print();
   });
 
-  document.getElementById('export-csv').addEventListener('click', () => {
-    const csvEsc = (s) => {
-      if (s == null || s === '') return '';
-      const str = String(s);
-      return /[",\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
-    };
+  const csvEsc = (s) => {
+    if (s == null || s === '') return '';
+    const str = String(s);
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
+  };
 
+  function buildPlateCsv() {
     let csv = '';
     // Metadata block (Field,Value rows) — kept at the top so it's visible
     // when the CSV is opened in Excel or any text editor.
@@ -1143,14 +1143,49 @@
       });
     });
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    return csv;
+  }
+
+  function getExportFilename() {
+    const experimentName = document.getElementById('meta-experiment').value || 'plate';
+    const safeName = experimentName.trim().replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g, '');
+    return `${safeName || 'plate'}_plate_map.csv`;
+  }
+
+  function downloadCsvBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const expName = document.getElementById('meta-experiment').value || 'plate';
     a.href = url;
-    a.download = `${expName.replace(/[^a-z0-9]+/gi,'_')}_plate_map.csv`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('export-csv').addEventListener('click', async () => {
+    const csv = buildPlateCsv();
+    const filename = getExportFilename();
+    const blob = new Blob([csv], { type: 'text/csv' });
+
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{
+            description: 'CSV file',
+            accept: { 'text/csv': ['.csv'] }
+          }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        console.error('Save picker failed; falling back to download.', err);
+      }
+    }
+
+    downloadCsvBlob(blob, filename);
   });
 
   // ---------- CSV IMPORT ----------
